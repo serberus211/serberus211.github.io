@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Pagos">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#1f6f5c">
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+window.__syncTag=function(){
+  if(window.__os&&window.__pend!=null){
+    try{window.__os.User.addTag('pendiente',window.__pend>0?'si':'no')}catch(e){}
+  }
+};
+window.OneSignalDeferred=window.OneSignalDeferred||[];
+window.__diag=function(t){
+  var d=document.getElementById('diag');
+  if(d){d.textContent=t}else{setTimeout(function(){window.__diag(t)},400)}
+};
+window.__estado=function(){
+  try{
+    var os=window.__os,sub=os.User.PushSubscription;
+    window.__diag('Diagnóstico: permiso='+Notification.permission+' · suscrito='+(sub.optedIn?'sí':'no')+' · id='+(sub.id||'ninguno'));
+  }catch(e){window.__diag('Diagnóstico: error leyendo estado: '+e.message)}
+};
+window.OneSignalDeferred=window.OneSignalDeferred||[];
+OneSignalDeferred.push(async function(OneSignal){
+  window.__started=true;
+  window.__diag('Diagnóstico: iniciando OneSignal…');
+  try{
+    await OneSignal.init({
+      appId:"b4164c7d-ba66-4ae4-aaa3-7d394ee7c37c"
+    });
+    window.__os=OneSignal;
+    window.__syncTag();
+    window.__estado();
+    OneSignal.User.PushSubscription.addEventListener('change',window.__estado);
+  }catch(e){
+    window.__fallo=true;
+    window.__diag('Diagnóstico: error al iniciar OneSignal: '+(e&&e.message?e.message:e));
+  }
+});
+setTimeout(function(){
+  if(!window.__started)window.__diag('Diagnóstico: el código de OneSignal no se ejecutó (revisa bloqueadores de anuncios).');
+},8000);
+setTimeout(function(){
+  if(window.__started&&!window.__os&&!window.__fallo)window.__diag('Diagnóstico: OneSignal cargó pero no termina de iniciar.');
+},15000);
+</script>
+<title>Pagos del mes</title>
+<style>
+:root{--bg:#eef3f1;--card:#fff;--ink:#14302b;--mute:#5c7570;--line:#d3dfdb;--ok:#1f6f5c;--warn:#b7791f;--bad:#b3261e;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1c19;--card:#18292580;--ink:#e6f0ed;--mute:#8fa8a2;--line:#2a403b;--ok:#4fc3a1;--warn:#e0a84a;--bad:#ef7b72}}
+:root[data-theme="dark"]{--bg:#0f1c19;--card:#182925;--ink:#e6f0ed;--mute:#8fa8a2;--line:#2a403b;--ok:#4fc3a1;--warn:#e0a84a;--bad:#ef7b72}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:520px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:15px;font-weight:600;color:var(--mute);margin:0 0 4px}
+.big{font-size:34px;font-weight:700;line-height:1.1;margin:0}
+.sub{color:var(--mute);margin:6px 0 18px}
+.track{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.bar{flex:1;height:14px;background:var(--line);border-radius:7px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ok);width:0;border-radius:7px;transition:width .4s}
+.star{font-size:36px;line-height:1;color:var(--line);transition:color .3s,transform .3s}
+.star.on{color:#e0a82e;transform:scale(1.2) rotate(-8deg)}
+.cnt{font-size:14px;color:var(--mute);margin:0 0 22px}
+ul{list-style:none;margin:0;padding:0}
+li{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+li.paid .n{text-decoration:line-through;color:var(--mute)}
+.chk{width:28px;height:28px;border-radius:50%;border:2px solid var(--ok);background:none;color:#fff;font-size:16px;flex:none;cursor:pointer}
+li.paid .chk{background:var(--ok)}
+.t{flex:1;min-width:0}.n{font-weight:600;overflow-wrap:anywhere}
+.d{font-size:13px;color:var(--mute)}
+.d.late{color:var(--bad);font-weight:600}.d.soon{color:var(--warn);font-weight:600}
+.amt{font-variant-numeric:tabular-nums;font-weight:600}
+.del{background:none;border:0;color:var(--mute);font-size:20px;cursor:pointer;padding:4px 6px}
+h2{font-size:15px;margin:22px 0 10px}
+.add{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.add input{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 12px;min-width:0}
+.add input.full{grid-column:1/-1}
+.add button{grid-column:1/-1;font:inherit;font-weight:600;background:var(--ok);color:#fff;border:0;border-radius:10px;padding:12px;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--warn);outline-offset:2px}
+.notif{display:block;width:100%;margin-top:22px;font:inherit;font-weight:600;color:var(--ok);background:none;border:2px solid var(--ok);border-radius:10px;padding:11px;cursor:pointer}
+.empty{color:var(--mute);text-align:center;padding:18px 0}
+.note{font-size:13px;color:var(--mute);margin-top:22px}
+</style>
+</head>
+<body>
+<main>
+  <h1 id="mes"></h1>
+  <p class="big" id="falta"></p>
+  <p class="sub" id="sub"></p>
+  <div class="track">
+    <div class="bar" role="progressbar" aria-label="Pagos completados" aria-valuemin="0" aria-valuemax="100" id="barra"><i id="prog"></i></div>
+    <span class="star" id="star" aria-hidden="true">★</span>
+  </div>
+  <p class="cnt" id="cnt"></p>
+
+  <ul id="lista"></ul>
+
+  <h2>Anotar un pago</h2>
+  <div class="add">
+    <input class="full" id="nom" placeholder="Qué pagas (ej. Arriendo)" maxlength="60" autocomplete="off">
+    <input id="dia" type="number" inputmode="numeric" min="1" max="31" placeholder="Día del mes">
+    <input id="val" type="number" inputmode="decimal" min="0" placeholder="Valor (opcional)">
+    <input class="full" id="lim" type="number" inputmode="numeric" min="1" max="31" placeholder="Día límite de pago (opcional)">
+    <button id="btn" type="button">Guardar pago</button>
+  </div>
+  <button id="notif" class="notif" type="button">Activar recordatorios diarios</button>
+  <p class="note" id="diag" style="word-break:break-all"></p>
+  <p class="note">Tus pagos se guardan en este teléfono y se repiten cada mes. Al empezar un mes nuevo, todos vuelven a quedar pendientes.</p>
+</main>
+<script>
+(function(){
+  var KEY='pagos-del-mes-v1';
+  var meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  var hoy=new Date(), mk=hoy.getFullYear()+'-'+(hoy.getMonth()+1), dh=hoy.getDate();
+  var data={pagos:[],pagado:{}};
+  try{var r=localStorage.getItem(KEY);if(r)data=JSON.parse(r)}catch(e){}
+  if(!data.pagos)data.pagos=[]; if(!data.pagado)data.pagado={};
+  if(!data.pagado[mk])data.pagado[mk]=[];
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(data))}catch(e){}}
+  function $(id){return document.getElementById(id)}
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function fmt(n){return n?'$'+Number(n).toLocaleString('es-CO'):''}
+
+  function render(){
+    function L(p){return p.lim||p.dia}
+    var pg=data.pagos.slice().sort(function(a,b){return L(a)-L(b)});
+    var pd=data.pagado[mk];
+    var hechos=pg.filter(function(p){return pd.indexOf(p.id)>-1}).length;
+    var pend=pg.length-hechos;
+    window.__pend=pend; window.__syncTag();
+    $('mes').textContent=meses[hoy.getMonth()].charAt(0).toUpperCase()+meses[hoy.getMonth()].slice(1)+' '+hoy.getFullYear();
+    var pend15=pg.filter(function(p){return L(p)<=15&&pd.indexOf(p.id)<0}).length;
+    if(!pg.length){$('falta').textContent='Sin pagos aún';$('sub').textContent='Anota abajo tu primer pago del mes.'}
+    else if(pend===0){$('falta').textContent='Todo pagado';$('sub').textContent='No te queda nada pendiente este mes.'}
+    else{
+      $('falta').textContent='Te faltan '+pend+(pend===1?' pago':' pagos');
+      if(dh<=15){var q=15-dh;$('sub').textContent=(q===0?'Hoy es el último día para ponerte al día (15).':'Faltan '+q+(q===1?' día':' días')+' para el 15.')+(pend15?' Con vencimiento hasta el 15: '+pend15+'.':'')}
+      else $('sub').textContent='Ya pasó el 15. Revisa los que siguen pendientes.';
+    }
+    var pct=pg.length?Math.round(hechos/pg.length*100):0;
+    $('prog').style.width=pct+'%';
+    $('barra').setAttribute('aria-valuenow',pct);
+    $('cnt').textContent=pg.length?(hechos+' de '+pg.length+(pg.length===1?' pago hecho':' pagos hechos')+(pend===0?' · ¡Completaste el mes!':'')):'';
+    $('star').className='star'+(pg.length&&pend===0?' on':'');
+    var ul=$('lista');
+    if(!pg.length){ul.innerHTML='<li class="empty" style="display:block;border:0;background:none">Todavía no hay pagos.</li>';return}
+    ul.innerHTML=pg.map(function(p){
+      var l=L(p), ok=pd.indexOf(p.id)>-1, cls='d', txt='Día '+p.dia+(p.lim?' · límite el día '+p.lim:'');
+      if(!ok){ if(l<dh){cls+=' late';txt='Vencido · límite el día '+l} else if(l-dh<=3){cls+=' soon';txt=(l===dh?'Límite hoy':'Límite en '+(l-dh)+(l-dh===1?' día':' días'))} }
+      else txt='Pagado';
+      return '<li class="'+(ok?'paid':'')+'"><button class="chk" data-c="'+p.id+'" aria-label="'+(ok?'Marcar como pendiente':'Marcar como pagado')+': '+esc(p.nom)+'">'+(ok?'✓':'')+'</button>'
+        +'<div class="t"><div class="n">'+esc(p.nom)+'</div><div class="'+cls+'">'+txt+'</div></div>'
+        +'<div class="amt">'+fmt(p.val)+'</div>'
+        +'<button class="del" data-x="'+p.id+'" aria-label="Eliminar '+esc(p.nom)+'">×</button></li>';
+    }).join('');
+  }
+
+  $('lista').addEventListener('click',function(e){
+    var c=e.target.getAttribute('data-c'), x=e.target.getAttribute('data-x');
+    if(c){var i=data.pagado[mk].indexOf(c); if(i>-1)data.pagado[mk].splice(i,1); else data.pagado[mk].push(c); save(); render()}
+    if(x){ if(confirm('¿Eliminar este pago?')){data.pagos=data.pagos.filter(function(p){return p.id!==x}); save(); render()} }
+  });
+  $('btn').addEventListener('click',function(){
+    var nom=$('nom').value.trim(), dia=parseInt($('dia').value,10), val=parseFloat($('val').value)||0;
+    if(!nom){$('nom').focus();return}
+    if(!(dia>=1&&dia<=31)){$('dia').focus();return}
+    var lim=parseInt($('lim').value,10)||0;
+    if($('lim').value&&!(lim>=1&&lim<=31)){$('lim').focus();return}
+    data.pagos.push({id:'p'+Date.now(),nom:nom,dia:dia,val:val,lim:lim});
+    $('nom').value='';$('dia').value='';$('val').value='';$('lim').value='';
+    save();render();
+  });
+  var nb=$('notif');
+  try{if(!('Notification' in window)||Notification.permission==='granted')nb.style.display='none'}catch(e){}
+  nb.addEventListener('click',function(){
+    window.__diag('Diagnóstico: pidiendo permiso…');
+    var os=window.__os;
+    if(!os){window.__diag('Diagnóstico: OneSignal aún no está listo. Espera unos segundos y vuelve a tocar.');return}
+    var p;
+    try{p=os.Notifications.requestPermission()}catch(e){window.__diag('Diagnóstico: error al pedir permiso: '+(e&&e.message?e.message:e));return}
+    Promise.resolve(p).then(function(){
+      if(Notification.permission==='granted'){
+        try{os.User.PushSubscription.optIn()}catch(e){}
+        nb.style.display='none';
+      }
+      setTimeout(window.__estado,1500);
+    }).catch(function(e){
+      window.__diag('Diagnóstico: error al pedir permiso: '+(e&&e.message?e.message:e));
+    });
+  });
+  render();
+})();
+</script>
+</body>
+</html>
